@@ -1,0 +1,340 @@
+---
+title: "Vidas globales: CALIDAD EN PERSPECTIVA"
+author: "Álvaro y Adrián"
+date: "Mayo 2024"
+output:
+  word_document:
+    toc: true
+    toc_depth: '2'
+  html_document:
+    toc: true
+    number_sections: true
+    toc_depth: 2
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+  pdf_document:
+    toc: true
+    toc_depth: '2'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Lectura de bases
+
+```{r}
+rm(list = ls())
+
+tic = read.csv("tic.csv",as.is = TRUE)
+poblacion = read.csv("poblacion.csv",as.is = TRUE)
+poblacionglobal = read.csv("poblacionglobal.csv",as.is = TRUE)
+IGI = read.csv("IGI.csv",as.is = TRUE)
+inflacion = read.csv("inflacion.csv",as.is = TRUE)
+tic08_21 = read.csv("tic08_21.csv",as.is = TRUE)
+```
+
+
+#Limpieza de los datos:
+
+```{r}
+colnames(tic)
+colnames(poblacion)
+colnames(IGI)
+
+```
+```{r}
+colnames(IGI)[grep("Overall.index_Inclusive_growth_Value",colnames(IGI))]<-"General"
+colnames(IGI)[grep("Economy_Inclusive_growth_Value",colnames(IGI))]<-"Economico"
+colnames(IGI)[grep("Living.conditions_Inclusive_growth_Value",colnames(IGI))]<-"Condicion_vida"
+colnames(IGI)[grep("Equality_Inclusive_growth_Value",colnames(IGI))]<-"Igualdad"
+colnames(IGI)[grep("Environment_Inclusive_growth_Value",colnames(IGI))]<-"Medioambiente"
+
+
+colnames(tic08_21)[grep("X2008_Index_Value",colnames(tic08_21))]<-"TIC2008"
+colnames(tic08_21)[grep("X2009_Index_Value",colnames(tic08_21))]<-"TIC2009"
+colnames(tic08_21)[grep("X2010_Index_Value",colnames(tic08_21))]<-"TIC2010"
+colnames(tic08_21)[grep("X2011_Index_Value",colnames(tic08_21))]<-"TIC2011"
+colnames(tic08_21)[grep("X2012_Index_Value",colnames(tic08_21))]<-"TIC2012"
+colnames(tic08_21)[grep("X2013_Index_Value",colnames(tic08_21))]<-"TIC2013"
+colnames(tic08_21)[grep("X2014_Index_Value",colnames(tic08_21))]<-"TIC2014"
+colnames(tic08_21)[grep("X2015_Index_Value",colnames(tic08_21))]<-"TIC2015"
+colnames(tic08_21)[grep("X2016_Index_Value",colnames(tic08_21))]<-"TIC2016"
+colnames(tic08_21)[grep("X2017_Index_Value",colnames(tic08_21))]<-"TIC2017"
+colnames(tic08_21)[grep("X2018_Index_Value",colnames(tic08_21))]<-"TIC2018"
+colnames(tic08_21)[grep("X2019_Index_Value",colnames(tic08_21))]<-"TIC2019"
+colnames(tic08_21)[grep("X2020_Index_Value",colnames(tic08_21))]<-"TIC2020"
+colnames(tic08_21)[grep("X2021_Index_Value",colnames(tic08_21))]<-"TIC2021"
+
+
+
+colnames(tic)[grep("X2011_Index_Value",colnames(tic))]<-"TIC2011"
+colnames(tic)[grep("X2021_Index_Value",colnames(tic))]<-"TIC2021"
+tic$Category_Label<-NULL
+
+colnames(poblacion)[grep("X1951_Absolute_value_Value",colnames(poblacion))]<-"POBLACION1951"
+colnames(poblacion)[grep("X1961_Absolute_value_Value",colnames(poblacion))]<-"POBLACION1961"
+colnames(poblacion)[grep("X1971_Absolute_value_Value",colnames(poblacion))]<-"POBLACION1971"
+colnames(poblacion)[grep("X1981_Absolute_value_Value",colnames(poblacion))]<-"POBLACION1981"
+colnames(poblacion)[grep("X1991_Absolute_value_Value",colnames(poblacion))]<-"POBLACION1991"
+colnames(poblacion)[grep("X2001_Absolute_value_Value",colnames(poblacion))]<-"POBLACION2001"
+colnames(poblacion)[grep("X2011_Absolute_value_Value",colnames(poblacion))]<-"POBLACION2011"
+colnames(poblacion)[grep("X2021_Absolute_value_Value",colnames(poblacion))]<-"POBLACION2021"
+```
+
+```{r}
+poblacion<-poblacion[-c(1,5,6,8,9,12,24,27,31,40:42,46,47,52,56,57,60,63,68,69,73:75,79:86,91,93,95:97,103,109,120,121,129,139,143,147,152,155,156,159,161,163,166,168,170,181:183,185,186,189,194,195,198,202,207,213:215,221,222,226:228,231,234:236,238:241,243,247,248,250,251), ]
+poblacion$id=1:167
+```
+
+
+#PROBLEMA SOBREPOBLACIÓN:
+
+```{r}
+poblacionglobal<-data.frame(t(poblacionglobal[-1]))
+poblacionglobal<-data.frame(Tiempo=1950:2021,poblacionglobal=poblacionglobal[ ,1])
+p<-barplot(height = poblacionglobal$poblacionglobal, names=poblacionglobal$Tiempo,main = "Poblacion global", col=colorRampPalette(c('yellow','red3'))(72))
+```
+
+```{r}
+BBDD=merge(x=poblacion,y=tic,all = TRUE)
+kendall<-BBDD[-c(1,10,11,13,16,20,23,27,28,33,50,52,63:65,76,82,86,88,92,96,109,112,114,117,123,127:131,138,140,144,145,151,153,162:166), ]
+kendall$id=1:125
+kendall<-merge(x=kendall,y=IGI, all=TRUE)
+```
+
+#GRÁFICO DE DISPERSIÓN 1:
+
+```{r}
+library(corrplot)
+numer <- kendall[, c("POBLACION2021", "Condicion_vida")]
+plot(POBLACION2021~Condicion_vida, data=numer,col="red")
+# numer <- na.omit(numer)
+# corrplot(cor(numer, method = "kendall"), type = "upper", title = "Matriz de correlacion de Kendall",
+#          diag = FALSE, method = "ellipse", tl.col = "black", 
+#          addCoef.col = "orange", mar = c(2,2,5,2))
+
+```
+
+
+
+#BoxPlot confirmar anómalos:
+
+```{r}
+
+boxplot(poblacion$POBLACION2021,log="y",xlab="2021")
+```
+
+
+```{r}
+summary(poblacion$POBLACION2021)
+
+```
+```{r}
+which.max(poblacion$POBLACION2021)
+```
+China anómala
+
+
+```{r}
+kendall[which.max(kendall$POBLACION2021),"POBLACION2021"]=NA
+which.max(kendall$POBLACION2021)
+```
+India anómala
+
+```{r}
+kendall[which.max(kendall$POBLACION2021),"POBLACION2021"]=NA
+which.max(kendall$POBLACION2021)
+```
+EEUU no anómalo
+
+#Quitamos anómalos y representamos:
+
+```{r}
+library(corrplot)
+numer <- kendall[, c("POBLACION2021", "Condicion_vida")]
+plot(POBLACION2021~Condicion_vida, data=numer,col=rainbow(40))
+# numer <- na.omit(numer)
+# corrplot(cor(numer, method = "kendall"), type = "upper", title = "Matriz de correlacion de Kendall",
+#          diag = FALSE, method = "ellipse", tl.col = "black", 
+#          addCoef.col = "orange", mar = c(2,2,5,2))
+```
+
+Podemos observar que no hay relación entre Condición de vida y población
+
+
+
+Por aquí buscamos los países que mejor y peor situados están respecto a la Condición de vida
+
+```{r}
+which.max(IGI$Condicion_vida)
+which.min(IGI$Condicion_vida)
+
+aux<-IGI
+aux[which.max(aux$Condicion_vida),"Condicion_vida"]=NA
+aux[which.min(aux$Condicion_vida),"Condicion_vida"]=NA
+which.max(aux$Condicion_vida)
+which.min(aux$Condicion_vida)
+```
+
+Mejor pais: Bélgica
+            Suecia
+            
+Peor pais: Sierra Leona
+           Burkina Faso
+
+Ahora, vemos lo mismo respecto al uso de las TIC en 2021:
+
+```{r}
+which.max(tic$TIC2021)
+which.min(tic$TIC2021)
+
+aux<-tic
+aux[which.max(aux$TIC2021),"TIC2021"]=NA
+aux[which.min(aux$TIC2021),"TIC2021"]=NA
+which.max(aux$TIC2021)
+which.min(aux$TIC2021)
+```
+Mejor pais: Islandia
+            Bélgica
+            
+Peor pais: Sudán del Sur
+           Yemen
+           
+Bélgica parece que repite, el resto parece que no ¿estarán relacionados?
+
+```{r}
+library(corrplot)
+
+numer = subset(kendall,select=c(Igualdad, Condicion_vida))
+corrplot(cor(numer, method = "pearson"), type = "upper", title = "Matriz de correlación de Pearson",
+         diag = FALSE, method = "ellipse", tl.col = "black", 
+         addCoef.col = "orange", mar = c(2,2,5,2))
+```
+
+```{r}
+numer = subset(kendall,select=c(POBLACION2021, Condicion_vida))
+numer <- na.omit(numer)
+corrplot(cor(numer, method = "pearson"), type = "upper", title = "Matriz de correlación de Pearson",
+         diag = FALSE, method = "ellipse", tl.col = "black", 
+         addCoef.col = "orange", mar = c(2,2,5,2))
+```
+
+
+
+```{r}
+numer = subset(kendall,select=c(TIC2021, Condicion_vida))
+corrplot(cor(numer, method = "pearson"), type = "upper", title = "Matriz de correlación de Pearson",
+         diag = FALSE, method = "ellipse", tl.col = "black", 
+         addCoef.col = "orange", mar = c(2,2,5,2))
+```
+
+
+Claramente la condición de vida está relacionada con la Igualdad y sobre todo, con las TIC.
+La población, en cambio, no está relacionada con la condicion de vida. 
+
+
+
+Ahora buscamos los países mejor y peor posicionados respecto a la igualdad:
+
+```{r}
+which.max(kendall$Igualdad)
+which.min(kendall$Igualdad)
+aux<-kendall
+aux[which.max(aux$Igualdad),"Igualdad"]=NA
+which.max(aux$Igualdad)
+aux2<-aux
+aux2[which.max(aux2$Igualdad),"Igualdad"]=NA
+which.max(aux2$Igualdad)
+
+```
+Los nórdicos destacan como los más equitativos entre géneros con: Suecia, Finlandia y Noruega
+
+
+Realizamos una prueba/test de signo, para ver si es igual significativamente la mediana de uso de las TIC en 2008 y 2021 y entre 2011 y 2021:
+
+
+```{r}
+TestSignos = function(x, M = 0, p = 0.5, conf.level = 0.95, 
+                      alternative = "two.sided") {
+  S = sum(x-M > 0)
+  ceros = sum(x-M == 0)
+  n = length(x) - ceros
+  binom.test(x = S, n = n, p = p, alternative = alternative, 
+             conf.level = conf.level)
+}
+```
+
+```{r}
+
+datos <- kendall[!is.na(kendall$TIC2021),]
+datos <- datos[!is.na(datos$TIC2011),]
+TestSignos(datos$TIC2021-datos$TIC2011)
+
+
+```
+
+```{r}
+
+datos <- tic08_21[!is.na(tic08_21$TIC2021),]
+datos <- datos[!is.na(datos$TIC2008),]
+TestSignos(datos$TIC2021-datos$TIC2008)
+
+
+```
+
+
+Por último, HACEMOS LA MEDIA POR COLUMNAS DE TODO EL USO DE TIC DE 2008 A 2021, PARA VER EL USO DE LAS TIC DE FORMA GLOBAL EN ESTOS 13 AÑOS:
+
+PODEMOS DESTACAR QUE DISMINUYE 2 VECES. UNA POR LA CRISIS DE 2008 Y OTRA POR EL COVID
+
+
+```{r}
+datos08 <- tic08_21[!is.na(tic08_21$TIC2008),]
+datos09 <- tic08_21[!is.na(tic08_21$TIC2009),]
+datos10 <- tic08_21[!is.na(tic08_21$TIC2010),]
+datos11 <- tic08_21[!is.na(tic08_21$TIC2011),]
+datos12 <- tic08_21[!is.na(tic08_21$TIC2012),]
+datos13 <- tic08_21[!is.na(tic08_21$TIC2013),]
+datos14 <- tic08_21[!is.na(tic08_21$TIC2014),]
+datos15 <- tic08_21[!is.na(tic08_21$TIC2015),]
+datos16 <- tic08_21[!is.na(tic08_21$TIC2016),]
+datos17 <- tic08_21[!is.na(tic08_21$TIC2017),]
+datos18 <- tic08_21[!is.na(tic08_21$TIC2018),]
+datos19 <- tic08_21[!is.na(tic08_21$TIC2019),]
+datos20 <- tic08_21[!is.na(tic08_21$TIC2020),]
+datos21 <- tic08_21[!is.na(tic08_21$TIC2021),]
+
+
+ticSUMA <- data.frame(
+  "Año" = as.character(c("datos")),
+  "2008" = c(sum(datos08$TIC2008)/length(datos08$TIC2008)) , 
+  "2009" = c(sum(datos09$TIC2009)/length(datos09$TIC2009)), 
+  "2010" = c(sum(datos10$TIC2010)/length(datos10$TIC2010)),
+  "2011" = c(sum(datos11$TIC2011)/length(datos11$TIC2011)),
+  "2012" = c(sum(datos12$TIC2012)/length(datos12$TIC2012)),
+  "2013" = c(sum(datos13$TIC2013)/length(datos13$TIC2013)),
+  "2014" = c(sum(datos14$TIC2014)/length(datos14$TIC2014)),
+  "2015" = c(sum(datos15$TIC2015)/length(datos15$TIC2015)),
+  "2016" = c(sum(datos16$TIC2016)/length(datos16$TIC2016)),
+  "2017" = c(sum(datos17$TIC2017)/length(datos17$TIC2017)),
+  "2018" = c(sum(datos18$TIC2018)/length(datos18$TIC2018)),
+  "2019" = c(sum(datos19$TIC2019)/length(datos19$TIC2019)),
+  "2020" = c(sum(datos20$TIC2020)/length(datos20$TIC2020)),
+  "2021" = c(sum(datos21$TIC2021)/length(datos21$TIC2021))
+)
+```
+
+
+```{r}
+ticSUMA <- data.frame(t(ticSUMA[-1]))
+# Añadimos los nombres de las columnas
+
+
+```
+
+```{r}
+p<-barplot(height = ticSUMA$t.ticSUMA..1.., names=2008:2021,main = "Barras", col="#F19CBB")
+```
+
